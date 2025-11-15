@@ -1,4 +1,4 @@
-% Copy of segway_nmpc.m with global trajectory tracking
+% Copy of segway_nmpc.m with global Path Following
 % This version specifies trajectories in the global frame and transforms them
 
 clear; clc; close all;
@@ -92,7 +92,7 @@ nlobj.Model.OutputFcn = @(x, u) x;
 
 %% Define cost function
 Q_nmpc = diag([
-    0.1,    ... x [ignore local position]
+    0,    ... x [ignore local position]
     50,     ... θ [moderate - stay reasonably upright]
     500,    ... ψ [VERY HIGH - heading is everything!]
     100,    ... dx [HIGH - velocity tracking]
@@ -119,7 +119,7 @@ fprintf('NMPC controller validated successfully!\n');
 %% Define GLOBAL trajectory
 fprintf('\n--- Global Trajectory Definition ---\n');
 
-trajectory_type = 'sine';  % 'circle', 'line', 'figure8', 'sine'
+trajectory_type = 'figure8';  % 'circle', 'line', 'figure8', 'sine'
 
 switch trajectory_type
     case 'sine'
@@ -151,7 +151,7 @@ switch trajectory_type
     case 'line'
         % Straight line trajectory
         v_line = 0.5;  % Velocity (m/s)
-        X_global_ref = @(t) v_line * t;
+        X_global_ref     = @(t) v_line * t;
         Y_global_ref = @(t) 2.0;  % Constant Y
         dX_global_ref = @(t) v_line;
         dY_global_ref = @(t) 0;
@@ -246,14 +246,8 @@ for k = 1:N_steps
     X_ref_global_hist(k) = X_ref_global;
     Y_ref_global_hist(k) = Y_ref_global;
 
-    % Transform global trajectory to local frame
-
-    % Position error in global frame
-    error_X_global = X_ref_global - X_global_current;
-    error_Y_global = Y_ref_global - Y_global_current;
-
-    % Simplified approach: Track heading and velocity only
-    % Let the path naturally emerge from correct heading + velocity
+    % Track heading and velocity only, and let the path following
+    % happen from correct heading + velocity
 
     % Desired heading: follow path tangent
     psi_ref = atan2(dY_ref_global, dX_ref_global);
@@ -326,7 +320,7 @@ error_X_global = X_global - X_ref_global;
 error_Y_global = Y_global - Y_ref_global;
 error_distance = sqrt(error_X_global.^2 + error_Y_global.^2);
 
-fprintf('\n--- Global Trajectory Tracking Performance ---\n');
+fprintf('\n--- Global Path Following Performance ---\n');
 fprintf('Position tracking error:\n');
 fprintf('  RMS distance error: %.4f m\n', sqrt(mean(error_distance.^2)));
 fprintf('  Max distance error: %.4f m\n', max(error_distance));
@@ -352,7 +346,7 @@ plot(X_global(end), Y_global(end), 'rs', 'MarkerSize', 12, 'MarkerFaceColor', 'r
 hold off;
 xlabel('$X$ [m]', 'FontSize', 14);
 ylabel('$Y$ [m]', 'FontSize', 14);
-title('Global Trajectory Tracking', 'FontSize', 16);
+title('Global Path Following', 'FontSize', 16);
 legend('Actual', 'Reference', 'Start', 'End', 'Location', 'best', 'FontSize', 12);
 grid on;
 axis equal;
@@ -404,7 +398,7 @@ legend('$\tau_L$', '$\tau_R$', 'Location', 'best', 'FontSize', 12);
 grid on;
 set(gca, 'FontSize', 12);
 
-sgtitle('NMPC-Based Global Trajectory Tracking', 'FontSize', 18, 'FontWeight', 'bold');
+% sgtitle('NMPC-Based Global Path Following', 'FontSize', 18, 'FontWeight', 'bold');
 
 %% Helper functions (same as before)
 function x_next = segway_discrete_dynamics(x, u, Ts, params)
